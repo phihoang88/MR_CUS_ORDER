@@ -15,7 +15,8 @@ import {StackRouter} from 'react-navigation'
 import {
     HomeScreen,
     MealScreen,
-    ReceiptScreen
+    ReceiptScreen,
+    OrderListScreen
 } from '../screens'
 
 const Stack = createNativeStackNavigator()
@@ -26,6 +27,7 @@ const Navigatior = (props) => {
             <Stack.Screen name={'HomeScreen'} component={HomeScreen}/>
             <Stack.Screen name={'MealScreen'} component={MealScreen}/>
             <Stack.Screen name={'ReceiptScreen'} component={ReceiptScreen}/>
+            <Stack.Screen name={'OrderListScreen'} component={OrderListScreen}/>
         </Stack.Navigator>
     </NavigationContainer>
 }

@@ -4,5 +4,6 @@ export default {
     ic_back_btn: 'chevron-left',
     ic_down: 'minus-circle',
     ic_up: 'plus-circle',
-    ic_delete:'window-close'
+    ic_delete:'window-close',
+    ic_order_list:'clipboard-list'
 }

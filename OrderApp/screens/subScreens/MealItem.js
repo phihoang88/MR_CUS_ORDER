@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
     View,
     Text,
@@ -6,24 +6,34 @@ import {
     TouchableOpacity,
     Dimensions,
     Image,
-
 } from 'react-native'
-import { colors, sizes } from '../../config'
-import Icon from 'react-native-vector-icons/FontAwesome5'
+import { colors, sizes, images } from '../../config'
+
 
 const MealItem = (props) => {
     let {
-        meal_id,
-        meal_nm,
-        meal_price,
-        meal_image
+        product_id,
+        product_nm_vn,
+        product_nm_en,
+        product_nm_jp,
+        price,
+        price_show,
+        product_avatar,
+        description,
+        menu_id
     } = props.meal
     const { onPress } = props
+
+    const [imageError, setImageError] = useState(true)
+
+    const onImageNotFound = () => {
+        setImageError(false);
+    }
+
     return <View
         onPress={onPress}
         style={{
-            flex: 1,
-            width: Dimensions.get('window').width / 6,
+            width: '50%',
             height: Dimensions.get('window').height / 8,
             marginRight: 5,
             marginBottom: 5
@@ -43,13 +53,18 @@ const MealItem = (props) => {
             }}>
                 <View style={{ flex: 40 }}>
                     <Image
-                        source={meal_image}
+                        source={
+                            imageError ?
+                                { uri: `${images.image_folder}/${product_avatar}` } :
+                                require('../../assets/images/notfound.jpg')
+                        }
                         resizeMode='cover'
                         style={{
                             width: '100%',
                             height: '100%',
                             borderRadius: 10,
                         }}
+                        onError={() => onImageNotFound()}
                     />
                 </View>
                 <View style={{ flex: 60 }}>
@@ -65,14 +80,15 @@ const MealItem = (props) => {
                                 fontWeight: 'bold',
                                 fontSize: sizes.font_sz_title_item
                             }}>
-                                {meal_nm}
+                                {product_nm_vn || product_nm_en || product_nm_jp}
                             </Text>
                             <Text style={{
                                 marginLeft: 10
                             }}>
-                                {'ádhashdksahdashkdsjkdqwdqdwqdwqaddadaádasdsdád123'.length > sizes.maxlength_item ? 
-                                'ádhashdksahdashkdsjkdqwdqdwqdwqaddadaádasdsdád123'.substring(0,sizes.maxlength_item).concat('...') : 
-                                'ádhashdksahdashkdsjkdqwdqdwqdwqaddadaádasdsdád123'.substring(0,sizes.maxlength_item)}
+                                {description != null ?
+                                    description.length > sizes.maxlength_item ?
+                                        description.substring(0, sizes.maxlength_item).concat('...') :
+                                        description.substring(0, sizes.maxlength_item) : null}
                             </Text>
                         </View>
                     </View>
@@ -84,8 +100,8 @@ const MealItem = (props) => {
                     }}>
                         <Text style={{
                             color: 'red',
-                            fontSize:sizes.font_sz_notice_item
-                        }}>${meal_price}</Text>
+                            fontSize: sizes.font_sz_notice_item
+                        }}>${price || price_show}</Text>
                     </View>
                 </View>
             </View>

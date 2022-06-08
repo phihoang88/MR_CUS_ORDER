@@ -4,19 +4,25 @@ import { colors, icons, sizes } from '../../config'
 import Icon from 'react-native-vector-icons/FontAwesome5'
 
 const OrderTmpItem = (props) => {
+
     let {
-        meal_id,
-        meal_nm,
-        meal_image,
-        meal_price,
-        meal_count,
-        meal_order_stt
+        product_id,
+        product_nm_vn,
+        product_nm_en,
+        product_nm_jp,
+        product_avatar,
+        price,
+        price_show,
+        count,
+        product_order_stt_id
     } = props.order
     let onPressDown = props.onPressDown
     let onPressUp = props.onPressUp
     let onPressDel = props.onPressDel
 
-    return <View style={{
+    return <View 
+        key={product_id}
+    style={{
         flex: 100,
         flexDirection: 'row',
         height: 60,
@@ -29,7 +35,7 @@ const OrderTmpItem = (props) => {
             alignItems: 'center',
         }}>
             <Image
-                source={meal_image}
+                source={require('../../assets/images/meal1.jpg')}
                 resizeMode='stretch'
                 style={{
                     height: '80%',
@@ -44,9 +50,9 @@ const OrderTmpItem = (props) => {
             alignItems: 'flex-start',
         }}>
             <Text style={{ color: colors.color_tx }}>
-                {meal_nm.length > sizes.maxlength_item_tmp ?
-                    meal_nm.substring(0, sizes.maxlength_item_tmp).concat('...') :
-                    meal_nm.substring(0, sizes.maxlength_item_tmp)}
+                {product_nm_vn.length > sizes.maxlength_item_tmp ?
+                    product_nm_vn.substring(0, sizes.maxlength_item_tmp).concat('...') :
+                    product_nm_vn.substring(0, sizes.maxlength_item_tmp)}
             </Text>
         </View>
 
@@ -57,9 +63,9 @@ const OrderTmpItem = (props) => {
             flexDirection: 'row'
         }}>
             <TouchableOpacity
-                disabled={meal_order_stt == true ? true : false}
+                disabled={product_order_stt_id == 1 ? true : false}
                 onPress={onPressDown}>
-                <Icon name={icons.ic_down} color={meal_order_stt == true ? 'grey':'brown'} size={sizes.size_icon_count} style={{ marginRight: 5 }}></Icon>
+                <Icon name={icons.ic_down} color={product_order_stt_id == 1 ? 'grey':'brown'} size={sizes.size_icon_count} style={{ marginRight: 5 }}></Icon>
             </TouchableOpacity>
 
             <Text style={{
@@ -70,12 +76,12 @@ const OrderTmpItem = (props) => {
                 textAlign: 'center',
                 textAlignVertical: 'center',
                 marginRight: 5
-            }}>{meal_count}</Text>
+            }}>{count}</Text>
 
             <TouchableOpacity
-                disabled={meal_order_stt == true ? true : false}
+                disabled={product_order_stt_id == 1 ? true : false}
                 onPress={onPressUp}>
-                <Icon name={icons.ic_up} color={meal_order_stt == true ? 'grey':'green'} size={sizes.size_icon_count}></Icon>
+                <Icon name={icons.ic_up} color={product_order_stt_id == 1 ? 'grey':'green'} size={sizes.size_icon_count}></Icon>
             </TouchableOpacity>
         </View>
         <View style={{
@@ -86,9 +92,9 @@ const OrderTmpItem = (props) => {
         }}>
             <TouchableOpacity
                 onPress={onPressDel}
-                disabled={meal_order_stt == true ? true : false}
+                disabled={product_order_stt_id == 1 ? true : false}
             >
-                <Icon name={icons.ic_delete} color={meal_order_stt == true ? 'grey' : 'red'} size={sizes.size_icon_count}></Icon>
+                <Icon name={icons.ic_delete} color={product_order_stt_id == 1 ? 'grey' : 'red'} size={sizes.size_icon_count}></Icon>
             </TouchableOpacity>
         </View>
     </View>
