@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { View, Text, Image, TouchableOpacity } from 'react-native'
-import { colors, icons, sizes } from '../../config'
+import { colors, icons, images, sizes } from '../../config'
 import Icon from 'react-native-vector-icons/FontAwesome5'
 
 const OrderTmpItem = (props) => {
@@ -20,6 +20,11 @@ const OrderTmpItem = (props) => {
     let onPressUp = props.onPressUp
     let onPressDel = props.onPressDel
 
+    const [imageError, setImageError] = useState(true)
+    const onImageNotFound = () => {
+        setImageError(false)
+    }
+
     return <View 
         key={product_id}
     style={{
@@ -35,13 +40,18 @@ const OrderTmpItem = (props) => {
             alignItems: 'center',
         }}>
             <Image
-                source={require('../../assets/images/meal1.jpg')}
+                source={
+                    imageError ? 
+                    {uri : `${images.image_folder}/${product_avatar}`}:
+                    require('../../assets/images/notfound.jpg')
+                }
                 resizeMode='stretch'
                 style={{
                     height: '80%',
                     width: '80%',
                     borderRadius: 35,
                 }}
+                onError={() => onImageNotFound()}
             />
         </View>
         <View style={{

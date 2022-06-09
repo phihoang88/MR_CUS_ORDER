@@ -27,7 +27,7 @@ const MealItem = (props) => {
     const [imageError, setImageError] = useState(true)
 
     const onImageNotFound = () => {
-        setImageError(false);
+        setImageError(false)
     }
 
     return <View

@@ -6,7 +6,7 @@ import {
     Image,
     Dimensions
 } from 'react-native'
-import { colors, sizes, icons } from '../config'
+import { colors, sizes, icons, images } from '../config'
 import Icon from 'react-native-vector-icons/FontAwesome5'
 const MealScreen = (props) => {
 
@@ -33,6 +33,12 @@ const MealScreen = (props) => {
     //set init Amount
     const [amount, setAmount] = useState(1)
     // <-------------------InitLoad---------------------->END
+
+    const [imageError, setImageError] = useState(true)
+
+    const onImageNotFound = () => {
+        setImageError(false)
+    }
 
     const [isVisible, setVisible] = useState(false)
 
@@ -82,12 +88,17 @@ const MealScreen = (props) => {
                 padding: 20
             }}>
                 <Image
-                    source={require('../assets/images/meal1.jpg')}
+                    source={
+                        imageError ?
+                        {uri : `${images.image_folder}/${product_avatar}`} : 
+                        require('../assets/images/notfound.jpg')
+                    }
                     style={{
                         height: '100%',
                         width: '100%',
                         borderRadius: 50
                     }}
+                    onError={() => onImageNotFound()}
                 />
             </View>
             <View style={{
