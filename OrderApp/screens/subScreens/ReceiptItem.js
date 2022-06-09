@@ -5,10 +5,10 @@ import { colors, sizes } from '../../config'
 const ReceiptItem = (props) => {
 
     let {
-        meal_id,
-        meal_nm,
-        meal_price,
-        meal_count
+        product_id,
+        product_nm_vn,
+        price,
+        count
     } = props.receipt
 
     let indexRow = props.index
@@ -25,19 +25,19 @@ const ReceiptItem = (props) => {
                 <Text style={{
                     fontSize: sizes.font_sz_notice,
                     color: colors.color_tx,
-                }}>{meal_nm}</Text>
+                }}>{product_nm_vn}</Text>
             </View>
             <View style={{ flex: 15, justifyContent: 'flex-start', alignItems: 'center' }}>
                 <Text style={{
                     fontSize: sizes.font_sz_notice,
                     color: colors.color_tx,
-                }}>{meal_count}</Text>
+                }}>{count}</Text>
             </View>
             <View style={{ flex: 20, justifyContent: 'flex-start', alignItems: 'center' }}>
                 <Text style={{
                     fontSize: sizes.font_sz_notice,
                     color: colors.color_tx,
-                }}>{meal_price}</Text>
+                }}>{price}</Text>
             </View>
         </View>
         <View style={{backgroundColor:'black',height:1}}>

@@ -5,11 +5,11 @@ import {
     TouchableOpacity,
     FlatList
 } from 'react-native'
-import { colors, icons, sizes } from '../config'
+import { colors, icons, sizes,apis } from '../config'
 import Icon from 'react-native-vector-icons/FontAwesome5'
-// import { listOrder } from '../contents'
 import { ReceiptItem } from '../screens'
-
+import { Toast } from '../components'
+import axios from 'axios'
 
 const ReceiptScreen = (props) => {
 
@@ -18,28 +18,45 @@ const ReceiptScreen = (props) => {
 
 
     let listOrder = route.params.listOrder
+    let tableInfoId = route.params.tableInfoId
 
     // <-------------------initLoad-----------------------START>
 
     const [listReceipt, setListReceipt] = useState(listOrder.length > 0 ? listOrder : [])
 
-    
+
 
     // <-------------------initLoad-------------------------END>
 
     function calculateTotal() {
 
         let sumAmount = listReceipt.reduce(function (prev, current) {
-            return prev + +current.meal_count
+            return prev + +current.count
         }, 0);
 
         let sumPrice = listReceipt.reduce(function (prev, current) {
-            return prev + +current.meal_count*current.meal_price
+            return prev + +current.count * current.price
         }, 0);
 
         return {
             sumAmount: sumAmount,
-            sumPrice : sumPrice
+            sumPrice: sumPrice
+        }
+    }
+
+    // call waiter api for check out
+    const callPutMakeCheckout = async () => {
+        try {
+            const res = await axios.put(`${apis.TABLE_INFO_PATH}/makeCalling/${tableInfoId}`)
+            if (res.data.status == 'success') {
+                Toast('Waiter is coming...')
+            }
+            else {
+                Toast('Error happen! Please try again!')
+            }
+        }
+        catch (error) {
+            console.log(error.message)
         }
     }
 
@@ -50,7 +67,6 @@ const ReceiptScreen = (props) => {
             backgroundColor: colors.color_app,
             flexDirection: 'row',
             borderTopWidth: 1,
-            borderBottomWidth: 1,
         }}>
             {/* back button */}
             <View style={{
@@ -178,6 +194,9 @@ const ReceiptScreen = (props) => {
                     alignItems: 'center'
                 }}>
                     <TouchableOpacity
+                        onPress={() => {
+                            callPutMakeCheckout()
+                        }}
                         style={{
                             height: '80%',
                             width: '50%',

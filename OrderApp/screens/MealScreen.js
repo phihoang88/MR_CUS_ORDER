@@ -1,17 +1,13 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import {
     View,
     Text,
     TouchableOpacity,
     Image,
-    TextInput,
     Dimensions
 } from 'react-native'
-import { colors, sizes, icons } from '../config'
+import { colors, sizes, icons, images } from '../config'
 import Icon from 'react-native-vector-icons/FontAwesome5'
-import { ModalDialog } from '../components'
-import { getMealById } from '../contents'
-
 const MealScreen = (props) => {
 
     const { navigation, route } = props
@@ -19,19 +15,32 @@ const MealScreen = (props) => {
 
     // <-------------------InitLoad---------------------->START
     //get params navigation
-    const { menu_id, menu_nm, meal_id } = route.params
-    //get menu id, menu name
-    //get meal info by ID 
-    const meal = getMealById(menu_id, meal_id)
+    let {
+        menu_id,
+        menu_nm
+    } = route.params.menu
+    let {
+        description,
+        price,
+        price_show,
+        product_avatar,
+        product_id,
+        product_nm_en,
+        product_nm_jp,
+        product_nm_vn
+    } = route.params.product
+
     //set init Amount
     const [amount, setAmount] = useState(1)
     // <-------------------InitLoad---------------------->END
 
+    const [imageError, setImageError] = useState(true)
+
+    const onImageNotFound = () => {
+        setImageError(false)
+    }
+
     const [isVisible, setVisible] = useState(false)
-
-
-
-
 
     return <View style={{ flex: 1 }}>
         {/* tabbar */}
@@ -79,12 +88,17 @@ const MealScreen = (props) => {
                 padding: 20
             }}>
                 <Image
-                    source={meal.meal_image}
+                    source={
+                        imageError ?
+                        {uri : `${images.image_folder}/${product_avatar}`} : 
+                        require('../assets/images/notfound.jpg')
+                    }
                     style={{
                         height: '100%',
                         width: '100%',
                         borderRadius: 50
                     }}
+                    onError={() => onImageNotFound()}
                 />
             </View>
             <View style={{
@@ -97,12 +111,12 @@ const MealScreen = (props) => {
                     <View style={{ flexDirection: 'row' }}>
                         <View style={{ flex: 50 }}>
                             <Text style={{ color: 'black', fontSize: sizes.font_sz_title }}>
-                                {meal.meal_nm}
+                                {product_nm_vn || product_nm_en || product_nm_jp}
                             </Text>
                         </View>
                         <View style={{ flex: 50, alignItems: 'flex-end', marginTop: 5 }}>
                             <Text style={{ color: 'red', fontSize: sizes.font_sz_notice }}>
-                                ${meal.meal_price}
+                                ${price || price_show}
                             </Text>
                         </View>
                     </View>
@@ -113,7 +127,7 @@ const MealScreen = (props) => {
                             {menu_nm}
                         </Text>
                         <Text>
-                            {meal.meal_descript}
+                            {description}
                         </Text>
                     </View>
                 </View>
@@ -184,9 +198,13 @@ const MealScreen = (props) => {
                             }}
                             onPress={() => {
                                 goBack()
-                                meal.meal_count = amount
-                                meal.meal_order_stt = false
-                                route.params.setOrderTmpByAmount({data: meal})
+                                route.params.setOrderTmpByAmount({ data: {
+                                    count : amount,
+                                    product_order_stt_id : null,
+                                    product_nm_vn : product_nm_vn,
+                                    product_id : product_id,
+                                    price : price
+                                }})
                             }}
                         >
                             <Text style={{ color: 'yellow', fontWeight: 'bold' }}>ADD TO ORDER</Text>
