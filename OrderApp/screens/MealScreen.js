@@ -203,8 +203,9 @@ const MealScreen = (props) => {
                                     product_order_stt_id : null,
                                     product_nm_vn : product_nm_vn,
                                     product_id : product_id,
-                                    price : price
-                                }})
+                                    price : price,
+                                    product_avatar: product_avatar
+                                }},false)
                             }}
                         >
                             <Text style={{ color: 'yellow', fontWeight: 'bold' }}>ADD TO ORDER</Text>

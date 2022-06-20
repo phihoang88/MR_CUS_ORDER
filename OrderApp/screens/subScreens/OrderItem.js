@@ -4,7 +4,6 @@ import { colors, sizes } from '../../config'
 
 const OrderItem = (props) => {
 
-    console.log(props.order)
     let {
         product_id,
         product_nm_vn,

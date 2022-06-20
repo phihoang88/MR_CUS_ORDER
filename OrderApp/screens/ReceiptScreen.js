@@ -50,6 +50,8 @@ const ReceiptScreen = (props) => {
             const res = await axios.put(`${apis.TABLE_INFO_PATH}/makeCalling/${tableInfoId}`)
             if (res.data.status == 'success') {
                 Toast('Waiter is coming...')
+                goBack()
+                route.params.setOrderTmpByAmount(null,true)
             }
             else {
                 Toast('Error happen! Please try again!')

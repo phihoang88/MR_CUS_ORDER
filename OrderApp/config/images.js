@@ -1,6 +1,11 @@
+const image_folder = 'https://mresweb.azurewebsites.net/image'
+const logo = `${image_folder}/logo.png`
+const table_bg = `${image_folder}/table_bg.jpg`
+const table_icon = `${image_folder}/table1.png` 
+
 export default {
-    logo: 'https://meosys.com/mrapi/images/logo.png',
-    table_bg: 'https://meosys.com/mrapi/images/table_bg.jpg',
-    image_folder: 'https://meosys.com/mrapi/images',
-    table_icon: 'https://meosys.com/mrapi/images/table1.png',
+    image_folder,
+    logo,
+    table_bg,
+    table_icon,
 }

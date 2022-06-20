@@ -19,8 +19,6 @@ const OrderListScreen = (props) => {
 
     let listOrder = route.params.listOrder
 
-    console.log(listOrder)
-
     // <-------------------initLoad-----------------------START>
 
     const [listReceipt, setListReceipt] = useState(listOrder.length > 0 ? listOrder : [])
