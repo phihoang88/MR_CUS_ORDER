@@ -13,7 +13,7 @@ import { MenuItem, OrderTmpItem, MealItem } from '../screens'
 import { colors, images, sizes, icons, apis, system } from '../config'
 import Icon from 'react-native-vector-icons/FontAwesome5'
 
-import { ModalDialog, ModalDialogTable,Toast } from '../components'
+import { ModalDialog, ModalDialogTable, Toast } from '../components'
 import axios from 'axios'
 
 const HomeScreen = (props) => {
@@ -67,8 +67,8 @@ const HomeScreen = (props) => {
             setFetchingOrderLstTmp(false)
 
 
-            callGetListMenu()
-            callGetAllMealList()
+            // callGetListMenu()
+            // callGetAllMealList()
         });
 
         //initload
@@ -99,20 +99,28 @@ const HomeScreen = (props) => {
         }
     }, [isFirstTimeOrder])
 
-    function setOrderTmpByAmount(data) {
-        setFetchingOrderLstTmp(true)
-        const found = listOrderTmp.some(element => element.product_id == data.data.product_id && element.product_order_stt_id == null)
-        if (!found) {
-            listOrderTmp.push(data.data)
+    function setOrderTmpByAmount(data, isCheckout) {
+        if (isCheckout) {
+            setFetchingOrderLstTmp(true)
+            setListOrderTmp([])
+            setTableInfoId(null)
         }
         else {
-            //Find index of specific object using findIndex method.    
-            let objIndex = listOrderTmp.findIndex(obj => obj.product_id == data.data.product_id)
+            setFetchingOrderLstTmp(true)
+            const found = listOrderTmp.some(element => element.product_id == data.data.product_id && element.product_order_stt_id == null)
+            if (!found) {
+                listOrderTmp.push(data.data)
+            }
+            else {
+                //Find index of specific object using findIndex method.    
+                let objIndex = listOrderTmp.findIndex(obj => obj.product_id == data.data.product_id)
 
-            //Update object's name property.
-            listOrderTmp[objIndex].count = data.data.count
+                //Update object's name property.
+                listOrderTmp[objIndex].count = data.data.count
+            }
+            setListOrderTmp(listOrderTmp)
         }
-        setListOrderTmp(listOrderTmp)
+
     }
 
     function handleMinusMeal(index) {
@@ -135,9 +143,15 @@ const HomeScreen = (props) => {
     }
 
     function handleResetOrderTmp() {
-        setFetchingOrderLstTmp(true)
-        setListOrderTmp([])
-        setTableInfoId(null)
+        const found = listOrderTmp.some(element => element.product_order_stt_id != null)
+        if (found) {
+            Toast('Cannot Reset Order List')
+        }
+        else {
+            setFetchingOrderLstTmp(true)
+            setListOrderTmp([])
+            setTableInfoId(null)
+        }
     }
 
     function handleOrderTmp() {
@@ -233,14 +247,13 @@ const HomeScreen = (props) => {
                     "delFg": "0"
                 }))
             if (orderList.length == 0) {
-                setNotiOrder(true)
+                Toast('Please select something!')
             }
             else {
                 const res = await axios.post(`${apis.TABLE_ORDER_PATH}/insert`, orderList)
                 if (res.data.status == 'success') {
                     //callGetAllMealOrderList(tableInfoId)
-                    alert('success')
-                    //Toast(contents.msg_success_send_order)
+                    Toast("Order successfully!")
                     setFetchingOrderLstTmp(true)
                     listOrderTmp.map((item) => {
                         item.product_order_stt_id = 0
@@ -249,8 +262,7 @@ const HomeScreen = (props) => {
                     setListOrderTmp(listOrderTmp)
                 }
                 else {
-                    alert('faild')
-                    //Toast(contents.msg_err_send_order)
+                    Toast("Order unsuccessfully!Try it again")
                 }
             }
         } catch (error) {
@@ -406,7 +418,8 @@ const HomeScreen = (props) => {
                                     .map(item => ({
                                         "product_nm_vn": item.product_nm_vn,
                                         "count": item.count,
-                                        "product_order_stt_id": null
+                                        "product_order_stt_id": null,
+                                        "product_avatar": item.product_avatar
                                     }))}
                                 renderItem={({ item, index }) =>
                                     <OrderTmpItem
@@ -445,10 +458,7 @@ const HomeScreen = (props) => {
                         <View style={styles.btn_view}>
                             <TouchableOpacity style={styles.btnReset}
                                 onPress={() => {
-                                    if (listOrderTmp.length > 0) {
-                                        setDigReset(true)
-                                    }
-                                    setTableInfoId(null)
+                                    setDigReset(true)
                                 }}>
                                 <Text style={{ color: 'white' }}>RESET</Text>
                             </TouchableOpacity>
@@ -464,12 +474,11 @@ const HomeScreen = (props) => {
             <View style={{ flex: 20 }}></View>
             <TouchableOpacity
                 onPress={() => {
-                    console.log(tableInfoId)
-                    if(tableInfoId != null){
+                    if (tableInfoId != null) {
                         //call waiter api
                         callPutMakeCalling()
                     }
-                    else{
+                    else {
                         Toast('Please click [ORDER NOW] button before call waiter!')
                     }
                 }}
@@ -514,7 +523,8 @@ const HomeScreen = (props) => {
                 onPress={() => {
                     navigate('ReceiptScreen', {
                         listOrder: listOrderTmp.filter(item => item.product_order_stt_id != null),
-                        tableInfoId : tableInfoId
+                        tableInfoId: tableInfoId,
+                        setOrderTmpByAmount: setOrderTmpByAmount
                     })
                 }}
             >
