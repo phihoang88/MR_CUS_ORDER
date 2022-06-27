@@ -12,9 +12,11 @@ import {
 import { MenuItem, OrderTmpItem, MealItem } from '../screens'
 import { colors, images, sizes, icons, apis, system } from '../config'
 import Icon from 'react-native-vector-icons/FontAwesome5'
-
-import { ModalDialog, ModalDialogTable, Toast } from '../components'
+import messaging from '@react-native-firebase/messaging'
+import { ModalDialog, ModalDialogTable, Toast, Notification, ModalDialogLogin } from '../components'
 import axios from 'axios'
+import DeviceInfo from 'react-native-device-info'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 const HomeScreen = (props) => {
     //<---------initLoad------START----->
@@ -55,17 +57,40 @@ const HomeScreen = (props) => {
     const [digWarn, setDigWarn] = useState(false)
     //10. Table selected dialog
     const [digTableList, setDigTableList] = useState(false)
+    //11. Dialog checkout success
+    const [digCheckoutSs, setDigCheckoutSs] = useState(false)
+    //12. Dialog authentication for change table
+    const [digShowAuthentication, setShowAuthentication] = useState(false)
 
     //Move between screens
     const { navigation, route } = props
     const { navigate, goBack } = navigation
     //<---------initLoad-------END------>
+    //listen notification
+    useEffect(() => {
+        const unsubscribe = messaging().onMessage(async remoteMessage => {
+            setDigCheckoutSs(true)
+        });
+
+        return unsubscribe;
+    }, []);
+
+    useEffect(() => {
+        callGetTableForDevice()
+        setTableInfoIdAfterOpened()
+    }, [])
+
+    const setTableInfoIdAfterOpened = async () => {
+        const tableInfoId = await AsyncStorage.getItem("tableInfoId")
+        if (tableInfoId) {
+            setTableInfoId(tableInfoId)
+        }
+    }
 
     useEffect(() => {
         const unsubscribe = navigation.addListener('focus', () => {
             //after goback
             setFetchingOrderLstTmp(false)
-
 
             // callGetListMenu()
             // callGetAllMealList()
@@ -101,9 +126,9 @@ const HomeScreen = (props) => {
 
     function setOrderTmpByAmount(data, isCheckout) {
         if (isCheckout) {
-            setFetchingOrderLstTmp(true)
-            setListOrderTmp([])
-            setTableInfoId(null)
+            // setFetchingOrderLstTmp(true)
+            // setListOrderTmp([])
+            // setTableInfoId(null)
         }
         else {
             setFetchingOrderLstTmp(true)
@@ -120,7 +145,6 @@ const HomeScreen = (props) => {
             }
             setListOrderTmp(listOrderTmp)
         }
-
     }
 
     function handleMinusMeal(index) {
@@ -151,6 +175,7 @@ const HomeScreen = (props) => {
             setFetchingOrderLstTmp(true)
             setListOrderTmp([])
             setTableInfoId(null)
+            AsyncStorage.removeItem("tableInfoId")
         }
     }
 
@@ -206,20 +231,23 @@ const HomeScreen = (props) => {
     //callPost insert order list to DB
     const callPostInsertTableInfo = async () => {
         try {
+            const devToken = await AsyncStorage.getItem("fcmtoken")
             const res = await axios.post(`${apis.TABLE_INFO_PATH}/insertOrUpdateBook`, {
                 "tableId": tableId,
                 "tableSttId": "4",//Ordering
                 "serveDate": system.systemDateString(),
                 "serveTime": system.systemTimeString(),
                 "isEnd": "0",
+                "deviceToken": devToken,
                 "crtDt": system.systemDateTimeString(),
-                "crtUserId": "huy",
-                "crtPgmId": "order",
+                "crtUserId": "guess",
+                "crtPgmId": "Home Screen",
                 "delFg": "0"
             })
             if (res.data.status == 'success') {
                 setTableInfoId(res.data.data.id)
                 setFirstTimeOrder(true)
+                await AsyncStorage.setItem("tableInfoId", '' + res.data.data.id)
                 //Toast('success')
             }
             else {
@@ -227,6 +255,19 @@ const HomeScreen = (props) => {
             }
         } catch (error) {
             console.log(`callPostInsertTableInfo ${error}`)
+        }
+    }
+
+    //callPost insert order list to DB
+    const callNotification = async (type) => {
+        try {
+            await Notification.callSendNotification(type, {
+                "table_id": tableId,
+                "table_info_id": tableInfoId,
+                "table_nm_vn": tableNm,
+            })
+        } catch (error) {
+            console.log(`callNotification ${error}`)
         }
     }
 
@@ -242,8 +283,8 @@ const HomeScreen = (props) => {
                     "orderDt": system.systemDateString(),
                     "orderTm": system.systemTimeString(),
                     "crtDt": system.systemDateTimeString(),
-                    "crtUserId": "huy",
-                    "crtPgmId": "table order",
+                    "crtUserId": "guess",
+                    "crtPgmId": "Home Screen",
                     "delFg": "0"
                 }))
             if (orderList.length == 0) {
@@ -260,6 +301,10 @@ const HomeScreen = (props) => {
                         return item
                     })
                     setListOrderTmp(listOrderTmp)
+                    //table status id
+                    callPutUpdateTableStatus(4)
+                    //notification
+                    callNotification(Notification.ORDER)
                 }
                 else {
                     Toast("Order unsuccessfully!Try it again")
@@ -291,6 +336,7 @@ const HomeScreen = (props) => {
             const res = await axios.put(`${apis.TABLE_INFO_PATH}/makeCalling/${tableInfoId}`)
             if (res.data.status == 'success') {
                 Toast('Waiter is calling...')
+                callNotification(Notification.CALL)
             }
             else {
                 Toast('Error happen! Please try again!')
@@ -300,6 +346,80 @@ const HomeScreen = (props) => {
             console.log(error.message)
         }
     }
+
+    const callPostAuthentication = async (username, password) => {
+        try {
+            const res = await axios.post(`${apis.USER_PATH}/login`, {
+                usernameOrEmail: username,
+                password: password
+            })
+            if (res.data.status == 'success') {
+                setShowAuthentication(false)
+                callGetTableList()
+                setDigTableList(true)
+            }
+            else {
+                Toast("Your account not available!")
+            }
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    // call put update device id for table
+    const callPutUpdateDeviceIdAtTable = async (tabId) => {
+        try {
+            const res = await axios.put(`${apis.TABLE_PATH}/placeDevice/${tabId}`, {
+                "deviceId": DeviceInfo.getUniqueId()
+            })
+            if (res.data.status == 'success') {
+                Toast('Setting successfully!')
+                setTableId(res.data.data.id)
+                setTableNm(res.data.data.tableNmVn)
+                setDigTableList(false)
+            }
+            else {
+                Toast('Error happen! Please try again!')
+                setTableId(null)
+                setTableNm('')
+                setDigTableList(false)
+            }
+        }
+        catch (error) {
+            console.log(error.message)
+        }
+    }
+
+    const callGetTableForDevice = async () => {
+        try {
+            let deviceId = DeviceInfo.getUniqueId()
+            const res = await axios.get(`${apis.TABLE_PATH}/getInfoByDeviceId/${deviceId}`)
+            if (res.data.status == 'success') {
+                setTableId(res.data.data.table_id)
+                setTableNm(res.data.data.table_nm_vn)
+            }
+            else {
+                setTableId(null)
+                setTableNm('')
+                Toast('Cannot set table for device!')
+            }
+        }
+        catch (error) {
+            console.log(error)
+        }
+    }
+
+    //callPut update done order to DB
+    const callPutUpdateTableStatus = async (tableSttId) => {
+        try {
+            const res = await axios.put(`${apis.TABLE_INFO_PATH}/updateStt/${tableInfoId}`, {
+                "tableStatusId": tableSttId
+            })
+        } catch (error) {
+            console.log(`callPutUpdateTableStatus ${error}`)
+        }
+    }
+
 
     //<-------------------------API-----------------------END>
 
@@ -398,8 +518,7 @@ const HomeScreen = (props) => {
                                         marginLeft: 20,
                                     }}
                                     onPress={() => {
-                                        setDigTableList(true)
-                                        callGetTableList()
+                                        setShowAuthentication(true)
                                     }}>
                                     <Icon name='cog' size={30} color={'brown'} />
                                 </TouchableOpacity>
@@ -497,9 +616,14 @@ const HomeScreen = (props) => {
             </TouchableOpacity>
             <TouchableOpacity
                 onPress={() => {
-                    navigate('OrderListScreen', {
-                        listOrder: listOrderTmp
-                    })
+                    if (tableInfoId == null) {
+                        Toast("Please order something to review them.")
+                    }
+                    else {
+                        navigate('OrderListScreen', {
+                            tableInfoId: tableInfoId
+                        })
+                    }
                 }}
                 style={{
                     flex: 25,
@@ -521,11 +645,18 @@ const HomeScreen = (props) => {
                 alignItems: 'center'
             }}
                 onPress={() => {
-                    navigate('ReceiptScreen', {
-                        listOrder: listOrderTmp.filter(item => item.product_order_stt_id != null),
-                        tableInfoId: tableInfoId,
-                        setOrderTmpByAmount: setOrderTmpByAmount
-                    })
+                    //check order already
+                    if (listOrderTmp.length == 0 || tableInfoId == null) {
+                        Toast("Please order something.")
+                    }
+                    else {
+                        //move to receipt screen
+                        navigate('ReceiptScreen', {
+                            tableInfoId: tableInfoId,
+                            table_nm_vn: tableNm,
+                            setOrderTmpByAmount: setOrderTmpByAmount
+                        })
+                    }
                 }}
             >
                 <Icon name={icons.ic_checkout} size={sizes.size_icon_footer} color={'green'}></Icon>
@@ -585,14 +716,37 @@ const HomeScreen = (props) => {
             visible={digTableList}
             data={listTable}
             onYes={(data) => {
-                setTableId(data.table_id)
-                setTableNm(data.table_nm)
-                setDigTableList(false)
+                callPutUpdateDeviceIdAtTable(data.table_id)
             }}
             onNo={() => {
                 setDigTableList(false)
             }}>
         </ModalDialogTable>
+        <ModalDialog
+            visible={digCheckoutSs}
+            children={{
+                title: 'Notification',
+                message: 'Check out successfully! Thank you very much.',
+                type: 'yes'
+            }}
+            onYes={() => {
+                setDigCheckoutSs(false)
+                setFetchingOrderLstTmp(true)
+                setListOrderTmp([])
+                setTableInfoId(null)
+                AsyncStorage.removeItem("tableInfoId")
+            }}
+        />
+        <ModalDialogLogin
+            visible={digShowAuthentication}
+            title={"Authentication"}
+            onYes={(username, password) => {
+                callPostAuthentication(username, password)
+            }}
+            onNo={() => {
+                setShowAuthentication(false)
+            }}
+        />
     </View>
 }
 const styles = StyleSheet.create({
