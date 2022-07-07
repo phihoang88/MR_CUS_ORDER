@@ -61,6 +61,8 @@ const HomeScreen = (props) => {
     const [digCheckoutSs, setDigCheckoutSs] = useState(false)
     //12. Dialog authentication for change table
     const [digShowAuthentication, setShowAuthentication] = useState(false)
+    //13. Dialog clear device from table 
+    const [digClearDevice, setDigClearDevice] = useState(false)
 
     //Move between screens
     const { navigation, route } = props
@@ -166,7 +168,7 @@ const HomeScreen = (props) => {
         setListOrderTmp(listOrderTmp)
     }
 
-    function handleResetOrderTmp() {
+    async function handleResetOrderTmp() {
         const found = listOrderTmp.some(element => element.product_order_stt_id != null)
         if (found) {
             Toast('Cannot Reset Order List')
@@ -175,14 +177,18 @@ const HomeScreen = (props) => {
             setFetchingOrderLstTmp(true)
             setListOrderTmp([])
             setTableInfoId(null)
-            AsyncStorage.removeItem("tableInfoId")
+            await AsyncStorage.removeItem("tableInfoId")
         }
     }
 
-    function handleOrderTmp() {
+    async function handleOrderTmp() {
         try {
             if (tableInfoId == null) {
-                callPostInsertTableInfo()
+                //check is member order already
+                const res = await callPutUpdateDeviceTokenForTable(tableId)
+                if(!res){
+                    callPostInsertTableInfo()
+                }
             }
             else {
                 callPostInsertOrders()
@@ -232,12 +238,14 @@ const HomeScreen = (props) => {
     const callPostInsertTableInfo = async () => {
         try {
             const devToken = await AsyncStorage.getItem("fcmtoken")
-            const res = await axios.post(`${apis.TABLE_INFO_PATH}/insertOrUpdateBook`, {
+            const res = await axios.post(`${apis.TABLE_INFO_PATH}/insert`, {
                 "tableId": tableId,
                 "tableSttId": "4",//Ordering
                 "serveDate": system.systemDateString(),
                 "serveTime": system.systemTimeString(),
                 "isEnd": "0",
+                "isCalling": "0",
+                "isCheckout": "0",
                 "deviceToken": devToken,
                 "crtDt": system.systemDateTimeString(),
                 "crtUserId": "guess",
@@ -319,7 +327,7 @@ const HomeScreen = (props) => {
         try {
             const res = await axios.get(`${apis.TABLE_INFO_PATH}/getList`)
             if (res.data.status == 'success') {
-                setListTable(res.data.data.filter(item => item.table_stt_nm == 'Emptying'))
+                setListTable(res.data.data)
             }
             else {
                 setListTable([])
@@ -408,6 +416,47 @@ const HomeScreen = (props) => {
             console.log(error)
         }
     }
+
+    const callPutUpdateDeviceTokenForTable = async (tableId) => {
+        try {
+            const devToken = await AsyncStorage.getItem("fcmtoken")
+            console.log(devToken)
+            const res = await axios.put(`${apis.TABLE_INFO_PATH}/updateDeviceToken/${tableId}`, {
+                deviceToken: devToken
+            })
+            if (res.data.status == 'success') {
+                setTableInfoId(res.data.data.id)
+                await AsyncStorage.setItem("tableInfoId", '' + res.data.data.id)
+                return res.data.data.id
+            }
+            else {
+                //Toast('Cannot change device!')
+                return null
+            }
+        }
+        catch (error) {
+            console.log(`callPutUpdateDeviceTokenForTable ${error}`)
+            return null
+        }
+    }
+
+    const callPutUpdateClearDeviceFromTable = async () => {
+        try{
+            let deviceId = DeviceInfo.getUniqueId()
+            const res = await axios.put(`${apis.TABLE_PATH}/clearDeviceIdForTable/${tableId}`,{
+                deviceId : deviceId
+            })
+            if(res.data.status == 'success'){
+                Toast('Clear selected table successfully.')
+            }
+            else{
+                Toast('Cannot clear selected table.')
+            }
+        }
+        catch(error){
+            console.log(`callPutUpdateClearDeviceFromTable ${error}`)
+        }
+    } 
 
     //callPut update done order to DB
     const callPutUpdateTableStatus = async (tableSttId) => {
@@ -521,6 +570,16 @@ const HomeScreen = (props) => {
                                         setShowAuthentication(true)
                                     }}>
                                     <Icon name='cog' size={30} color={'brown'} />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={{
+                                        marginLeft: 20,
+                                        display: tableId ? 'flex' : 'none'
+                                    }}
+                                    onPress={() => {
+                                        setDigClearDevice(true)
+                                    }}>
+                                    <Icon name='window-close' size={30} color={'brown'} />
                                 </TouchableOpacity>
                             </View>
                         </ImageBackground>
@@ -646,7 +705,7 @@ const HomeScreen = (props) => {
             }}
                 onPress={() => {
                     //check order already
-                    if (listOrderTmp.length == 0 || tableInfoId == null) {
+                    if (listOrderTmp.length == 0 && tableInfoId == null) {
                         Toast("Please order something.")
                     }
                     else {
@@ -713,10 +772,21 @@ const HomeScreen = (props) => {
             }}>
         </ModalDialog>
         <ModalDialogTable
-            visible={digTableList}
+            visible={digTableList}//
             data={listTable}
             onYes={(data) => {
-                callPutUpdateDeviceIdAtTable(data.table_id)
+                if (!data.table_id) {
+                    alert("Please select a table for setting tablet.")
+                }
+                else {
+                    callPutUpdateDeviceIdAtTable(data.table_id)
+
+                    console.log(data)
+
+                    if (data.table_stt_nm == 'Ordering' || data.table_stt_nm == 'Serving') {
+                        callPutUpdateDeviceTokenForTable(data.table_id)
+                    }
+                }
             }}
             onNo={() => {
                 setDigTableList(false)
@@ -735,6 +805,27 @@ const HomeScreen = (props) => {
                 setListOrderTmp([])
                 setTableInfoId(null)
                 AsyncStorage.removeItem("tableInfoId")
+            }}
+        />
+        <ModalDialog
+            visible={digClearDevice}
+            children={{
+                title: 'Confirm',
+                message: `Remove table ${tableNm} from this device ?`,
+                type: 'yes/no'
+            }}
+            onYes={() => {
+                setTableId(null)
+                setTableNm('')
+                setFetchingOrderLstTmp(true)
+                setListOrderTmp([])
+                setTableInfoId(null)
+                AsyncStorage.removeItem("tableInfoId") 
+                callPutUpdateClearDeviceFromTable()
+                setDigClearDevice(false)
+            }}
+            onNo={() => {
+                setDigClearDevice(false)
             }}
         />
         <ModalDialogLogin

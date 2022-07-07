@@ -1,4 +1,4 @@
-import React, { useState,useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
     View,
     StyleSheet,
@@ -12,9 +12,10 @@ import {
 import { images } from '../config'
 
 const ModalDialogTable = ({ visible, data, onYes, onNo }) => {
-    const [selectedTable , setSelectedTable] = useState(null)
+    const [selectedTable, setSelectedTable] = useState(null)
     const [selectedTableId, setSelectedTableId] = useState(null)
     const [selectedTableNm, setSelectedTableNm] = useState('')
+    const [selectedTableSttNm, setSelectedTableSttNm] = useState('')
     return <Modal transparent visible={visible}>
         <View style={styles.modalBackGround}>
             <View style={styles.modalContainer}>
@@ -41,6 +42,7 @@ const ModalDialogTable = ({ visible, data, onYes, onNo }) => {
                                         setSelectedTable(index)
                                         setSelectedTableId(item.table_id)
                                         setSelectedTableNm(item.table_nm_vn)
+                                        setSelectedTableSttNm(item.table_stt_nm)
                                     }}
                                     key={item.table_id}
                                     style={{
@@ -51,23 +53,63 @@ const ModalDialogTable = ({ visible, data, onYes, onNo }) => {
                                         marginBottom: 5,
                                         height: Dimensions.get('window').height * 0.6 / 5,
                                         width: Dimensions.get('window').width * 0.6 / 5 - 15,
+                                        justifyContent: 'center',
+                                    }}>
+                                    <View style={{
+                                        position: 'absolute',
+                                        height: '30%',
+                                        width: '100%',
+                                        backgroundColor: 'rgba(0,0,0,0.3)',
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        zIndex: 1
+                                    }}>
+                                        {item.table_stt_nm == 'Emptying' &&
+
+                                            <Text style={{
+                                                color: 'white',
+                                                fontWeight: 'bold'
+                                            }}>{item.table_stt_nm}</Text>}
+
+                                        {item.table_stt_nm == 'Ordering' &&
+                                            <Text style={{
+                                                color: 'red',
+                                                fontWeight: 'bold'
+                                            }}>{item.table_stt_nm}</Text>}
+                                        {item.table_stt_nm == 'Booking' &&
+
+                                            <Text style={{
+                                                color: 'blue',
+                                                fontWeight: 'bold'
+                                            }}>{item.table_stt_nm}</Text>}
+
+                                        {item.table_stt_nm == 'Serving' &&
+                                            <Text style={{
+                                                color: 'green',
+                                                fontWeight: 'bold'
+                                            }}>{item.table_stt_nm}</Text>}
+
+                                    </View>
+                                    <View style={{
                                         justifyContent: 'flex-end',
                                         alignItems: 'center'
                                     }}>
-                                    <Image
-                                        source={{
-                                            uri: images.table_icon
-                                        }}
-                                        style={{
-                                            height: '75%',
-                                            width: '60%',
-                                        }}
-                                    />
-                                    <Text style={{
-                                        fontSize: 16,
-                                        color: 'black',
-                                        height:'25%'
-                                    }}>{item.table_nm_vn || item.table_nm_jp || item.table_nm_en}</Text>
+                                        <Image
+                                            source={{
+                                                uri: images.table_icon
+                                            }}
+                                            style={{
+                                                height: '75%',
+                                                width: '60%',
+                                            }}
+                                        />
+                                        <Text style={{
+                                            fontSize: 16,
+                                            color: 'black',
+                                            height: '25%'
+                                        }}>{item.table_nm_vn || item.table_nm_jp || item.table_nm_en}</Text>
+                                    </View>
+
                                 </TouchableOpacity>
                             }
                             keyExtractor={item => item.table_id}
@@ -81,9 +123,9 @@ const ModalDialogTable = ({ visible, data, onYes, onNo }) => {
                     }}>
                         <Text style={styles.title}>Table selected: </Text>
                         <Text style={{
-                            color:'red',
-                            fontSize:18,
-                            fontWeight:'bold'
+                            color: 'red',
+                            fontSize: 18,
+                            fontWeight: 'bold'
                         }}>{selectedTableNm}</Text>
                     </View>
 
@@ -102,8 +144,9 @@ const ModalDialogTable = ({ visible, data, onYes, onNo }) => {
                                 }}
                                 onPress={() => {
                                     onYes({
-                                        table_id : selectedTableId,
-                                        table_nm : selectedTableNm
+                                        table_id: selectedTableId,
+                                        table_nm: selectedTableNm,
+                                        table_stt_nm: selectedTableSttNm
                                     })
                                 }}>
                                 <Text style={styles.text}>OK</Text>
