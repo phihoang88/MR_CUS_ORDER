@@ -1,14 +1,14 @@
-import React, { useState } from 'react'
+import React, { useState,useEffect } from 'react'
 import {
     View,
     Text,
     TouchableOpacity,
     FlatList
 } from 'react-native'
-import { colors, icons, sizes,apis } from '../config'
+import { colors, icons, sizes, apis } from '../config'
 import Icon from 'react-native-vector-icons/FontAwesome5'
 import { ReceiptItem } from '../screens'
-import { Toast } from '../components'
+import { Toast,Notification } from '../components'
 import axios from 'axios'
 
 const ReceiptScreen = (props) => {
@@ -16,25 +16,51 @@ const ReceiptScreen = (props) => {
     const { navigation, route } = props
     const { navigate, goBack } = navigation
 
-
-    let listOrder = route.params.listOrder
     let tableInfoId = route.params.tableInfoId
+    let tableId = route.params.table_id
+    let tableNm = route.params.table_nm_vn
+
+    const [listOrder, setListOrder] = useState([]) 
 
     // <-------------------initLoad-----------------------START>
 
-    const [listReceipt, setListReceipt] = useState(listOrder.length > 0 ? listOrder : [])
 
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            //after goback
+            callGetListOrdering()
+        });
+        //initload
+        callGetListOrdering()
+        return unsubscribe;
+    }, [navigation])
 
+    //call get List Ordering
+    const callGetListOrdering = async () => {
+        try {
+            const res = await axios.get(`${apis.TABLE_ORDER_PATH}/getOrderingList/${tableInfoId}`)
+            if(res.data.status == "success"){
+                setListOrder(res.data.data)
+            }
+            else{
+                setListOrder([])
+                Toast('Get list failed.')
+            }
+        }
+        catch (error) {
+            console.log(`callGetListOrdering ${error}`)
+        }
+    }
 
     // <-------------------initLoad-------------------------END>
 
     function calculateTotal() {
 
-        let sumAmount = listReceipt.reduce(function (prev, current) {
+        let sumAmount = listOrder.reduce(function (prev, current) {
             return prev + +current.count
         }, 0);
 
-        let sumPrice = listReceipt.reduce(function (prev, current) {
+        let sumPrice = listOrder.reduce(function (prev, current) {
             return prev + +current.count * current.price
         }, 0);
 
@@ -47,18 +73,40 @@ const ReceiptScreen = (props) => {
     // call waiter api for check out
     const callPutMakeCheckout = async () => {
         try {
-            const res = await axios.put(`${apis.TABLE_INFO_PATH}/makeCalling/${tableInfoId}`)
-            if (res.data.status == 'success') {
-                Toast('Waiter is coming...')
-                goBack()
-                route.params.setOrderTmpByAmount(null,true)
+            await callGetListOrdering()
+            //check is till order has not done yet
+            const found = listOrder.some(order => order.product_order_stt_id == 0)   
+            if(found){
+                Toast("Ordered food is preparing...Please wait!")
             }
-            else {
-                Toast('Error happen! Please try again!')
-            }
+            else{
+                const res = await axios.put(`${apis.TABLE_INFO_PATH}/makeCalling/${tableInfoId}`)
+                if (res.data.status == 'success') {
+                    Toast('Waiter is coming...')
+                    callNotification()
+                    goBack()
+                    route.params.setOrderTmpByAmount(null, true)
+                }
+                else {
+                    Toast('Error happen! Please try again!')
+                }
+            } 
         }
         catch (error) {
             console.log(error.message)
+        }
+    }
+
+    //callPost insert order list to DB
+    const callNotification = async () => {
+        try {
+            await Notification.callSendNotification(Notification.CHECKOUT,{
+                "table_id": tableId,
+                "table_info_id": tableInfoId,
+                "table_nm_vn": tableNm,
+            })
+        } catch (error) {
+            console.log(`callNotification ${error}`)
         }
     }
 
@@ -141,7 +189,7 @@ const ReceiptScreen = (props) => {
                     {/* data */}
                     <View style={{ flex: 85 }}>
                         <FlatList
-                            data={listReceipt}
+                            data={listOrder}
                             renderItem={({ item, index }) =>
                                 <ReceiptItem receipt={item}
                                     key={index}

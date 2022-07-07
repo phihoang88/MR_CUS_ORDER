@@ -1,29 +1,55 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
     View,
     Text,
     TouchableOpacity,
     FlatList
 } from 'react-native'
-import { colors, icons, sizes } from '../config'
+import { apis, colors, icons, sizes } from '../config'
 import Icon from 'react-native-vector-icons/FontAwesome5'
 import { OrderItem } from '../screens'
-
-
+import axios from 'axios'
+import { Toast } from '../components'
 
 const OrderListScreen = (props) => {
 
     const { navigation, route } = props
     const { navigate, goBack } = navigation
 
-
-    let listOrder = route.params.listOrder
+    const [listOrder, setListOrder] = useState([])
+    let tableInfoId = route.params.tableInfoId
+    
 
     // <-------------------initLoad-----------------------START>
 
-    const [listReceipt, setListReceipt] = useState(listOrder.length > 0 ? listOrder : [])
+    useEffect(() => {
+        const unsubscribe = navigation.addListener('focus', () => {
+            //after goback
+            callGetListOrdering()
+        });
+        //initload
+        callGetListOrdering()
+        return unsubscribe;
+    }, [navigation])
 
-    
+    //call get List Ordering
+    const callGetListOrdering = async () => {
+        try {
+            const res = await axios.get(`${apis.TABLE_ORDER_PATH}/getOrderingList/${tableInfoId}`)
+            if(res.data.status == "success"){
+                setListOrder(res.data.data)
+            }
+            else{
+                setListOrder([])
+                Toast('Get list failed.')
+            }
+        }
+        catch (error) {
+            console.log(`callGetListOrdering ${error}`)
+        }
+    }
+
+
 
     // <-------------------initLoad-------------------------END>
 
@@ -81,7 +107,7 @@ const OrderListScreen = (props) => {
                                 fontWeight: 'bold'
                             }}>No.</Text>
                         </View>
-                        <View style={{ flex: 35, justifyContent: 'flex-start', alignItems: 'center'}}>
+                        <View style={{ flex: 35, justifyContent: 'flex-start', alignItems: 'center' }}>
                             <Text style={{
                                 fontSize: 18,
                                 color: colors.color_imp,
@@ -102,7 +128,7 @@ const OrderListScreen = (props) => {
                                 fontWeight: 'bold'
                             }}>Price</Text>
                         </View>
-                        <View style={{ flex: 20, justifyContent: 'flex-start', alignItems: 'center'}}>
+                        <View style={{ flex: 20, justifyContent: 'flex-start', alignItems: 'center' }}>
                             <Text style={{
                                 fontSize: 18,
                                 color: colors.color_imp,
@@ -113,7 +139,7 @@ const OrderListScreen = (props) => {
                     {/* data */}
                     <View style={{ flex: 85 }}>
                         <FlatList
-                            data={listReceipt}
+                            data={listOrder}
                             renderItem={({ item, index }) =>
                                 <OrderItem order={item}
                                     key={index}
