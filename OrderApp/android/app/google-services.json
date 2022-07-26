@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "298606255645",
+    "project_id": "guess-app-e4b6a",
+    "storage_bucket": "guess-app-e4b6a.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:298606255645:android:7592448701fb44a196b0f4",
+        "android_client_info": {
+          "package_name": "com.orderapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "298606255645-1a2hif19fab900n5v4uonrg018c5tica.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMy6uBvw1ApuuMsZlLCv1JgFVKaqL6oBs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "298606255645-1a2hif19fab900n5v4uonrg018c5tica.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
